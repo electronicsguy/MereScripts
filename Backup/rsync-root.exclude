@@ -1,0 +1,16 @@
+/tmp
+/lost+found
+/media
+/mnt
+/dev
+/proc
+/run
+/sys
+/boot
+/root
+/home/pi/Utils/backup/rsync.log
+/home/*/.gvfs
+/home/*/.thumbnails/*
+/home/*/.cache/*
+/home/*/.local/share/Trash/*
+

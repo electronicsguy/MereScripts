@@ -1,0 +1,6 @@
+/Utils/backup/rsync.log
+/*/.gvfs
+/*/.thumbnails/*
+/*/.cache/*
+/*/.local/share/Trash/*
+
