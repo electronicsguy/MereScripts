@@ -1,3 +1,7 @@
+# Note: Paths are all relative for rsync even though 
+# they may start with a "/"
+
+# Exclude temporary and run-time dependent data
 /tmp
 /lost+found
 /media
@@ -6,11 +10,20 @@
 /proc
 /run
 /sys
-/boot
 /root
-/home/pi/Utils/backup/rsync.log
+
+# Exclude the /boot partition since it has to be mounted 
+# on the RPi and may cause a loop if not excluded
+/boot
+
+# temporary and run-time dependent data in various home dirs
 /home/*/.gvfs
 /home/*/.thumbnails/*
 /home/*/.cache/*
 /home/*/.local/share/Trash/*
 
+# This script's log file
+/home/pi/Utils/backup/rsync.log
+
+# Output data directories in /home
+/home/pi/Photography

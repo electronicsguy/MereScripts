@@ -12,4 +12,4 @@ then
     exit
 fi 
 
-sudo rsync -avunPh  --delete --stats --log-file=$LOGFILE --exclude-from $EXCLUDE $SOURCE $DEST
+sudo rsync -avuPh  --dry-run --delete --stats --log-file=$LOGFILE --exclude-from $EXCLUDE $SOURCE $DEST

@@ -1,6 +1,14 @@
-/Utils/backup/rsync.log
-/*/.gvfs
-/*/.thumbnails/*
-/*/.cache/*
-/*/.local/share/Trash/*
+# Note: Paths are all relative for rsync even though 
+# they may start with a "/"
 
+# temporary and run-time dependent data in the home dir
+/.gvfs
+/.thumbnails/*
+/.cache/*
+/.local/share/Trash/*
+
+# This script's log file
+/Utils/backup/rsync.log
+
+# Output data directories in /home
+/Photography
