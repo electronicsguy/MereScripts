@@ -116,7 +116,7 @@ WDATA=$(curl -s $URL)
 
 SIZE=${#WDATA}
 
-if (( $SIZE < 100 ));
+if (( $SIZE < 10 ));
 then
   echo -e "Unable to fetch weather data. Check network connection."
   exit
