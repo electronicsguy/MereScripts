@@ -1,0 +1,11 @@
+# ref: http://en.newinstance.it/2010/05/23/git-autocompletion-and-enhanced-bash-prompt/
+
+#green='\e[0;32m'
+#yellow='\e[0;33m'
+#white='\e[0;37m'
+#red='\e[0;31m'
+#blue='\e[0;34m'
+#color_off='\e[0m' # Color Reset
+#GIT_PS1_SHOWDIRTYSTATE=true
+
+#PS1="\[${green}\]\u@\h\[${yellow}\] \w\[${yellow}\]"'$(__git_ps1)'"\[${white}\] \$\[${color_off}\] "

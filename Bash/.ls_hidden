@@ -1,0 +1,5 @@
+#ref: http://unix.stackexchange.com/questions/21638/show-only-hidden-files-dot-files-in-ls-alias
+
+alias lhf="ls -A -1 -d -F .* | egrep -v '/$'"
+alias lhd="ls -A -1 -d -F .* | egrep  '/$'"
+alias lhfd="ls -Ad .*"

@@ -1,0 +1,22 @@
+#ref: http://stackoverflow.com/questions/941338/shell-script-how-to-pass-command-line-arguments-to-a-unix-alias
+
+export GREP_COLORS="sl=0;33;49:ms=1;34;49"
+#alias ff='function _blah(){ find "$1" "$2" "$3" | grep --color=always "^\|[^/]*$"; };_blah'
+
+function ff(){
+	if [ $# -lt 2 ]
+	then
+		echo "Needs 2 arguments";
+	else
+		find "$1" -iname "$2" | grep --color=always "^\|[^/]*$";
+	fi
+};
+
+function sff(){
+	if [ $# -lt 2 ]
+	then
+		echo "Needs 3 arguments";
+	else
+		sudo find "$1" -iname "$2" | grep --color=always "^\|[^/]*$";
+	fi
+};
