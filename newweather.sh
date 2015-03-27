@@ -41,6 +41,18 @@ DEG=$'\xc2\xb0'
 
 UNITS="C"
 
+# Bash shell syntactic sugar for comparison expressions:
+# http://stackoverflow.com/questions/6534891/when-do-you-use-or-usr-bin-test
+
+# Define ANSI color sequences
+GREEN='\e[0;32m'
+YELLOW='\e[0;33m'
+WHITE='\e[0;37m'
+RED='\e[0;31m'
+BLUE='\e[0;34m'
+COLOROFF='\e[0m'
+
+
 if [ -n "$1" ]
 then
   ARG=$1
@@ -82,10 +94,17 @@ else
   LOC="2295412"
 fi
 
-#LOC="2295420"	# Bangalore
-#LOC="2354842"	# Ann Arbor
-#LOC="2295411"	# Mumbai
-#LOC="2295386"  # Kolkata
+# Supress zenity window
+NOWIN=0
+if [[ ($1 == "nw") || ($1 == "-nw") ]];
+then
+  NOWIN=1
+fi
+
+if [[ ($# > 1) && (($2 == "nw") || ($2 == "-nw")) ]];
+then
+  NOWIN=1
+fi
 
 # For some reason the API must be given units in lowercase letters!
 URL="http://weather.yahooapis.com/forecastrss?w=$LOC&u=${UNITS,,}"
@@ -97,16 +116,27 @@ WDATA=$(curl -s $URL)
 
 SIZE=${#WDATA}
 
-if [ $SIZE -lt 10 ];
+if (( $SIZE < 100 ));
 then
   echo -e "Unable to fetch weather data. Check network connection."
   exit
 fi
 
-TEMP=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Conditions for (.*) at(.*)Current Conditions:(.*?),\s*('$sFPN')\s*[C|F](.*)/Currently in $2: $5'$pDEG' C, $4/g' | perl -pe 's/<\/b><br \/>\s+//')
+# Note: If your ssh client does not support colors, remove all the color tags
 
-DAYS=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Forecast:(.*)(<br \/>).*/$2/' | perl -pe 's/<\/b><BR \/>\s+//' | perl -pe 's/<br \/>\s+/\\r\\n/g')
+TEMP=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Conditions for (.*) at(.*)Current Conditions:(.*?),\s*('$sFPN')\s*[C|F](.*)/'$GREEN'Currently in $2: '$RED'$5'$pDEG' C, '$YELLOW'$4/g' | perl -pe 's/<\/b><br \/>\s+//')
+
+DAYS=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Forecast:(.*)(<br \/>).*/'$COLOROFF'$2/' | perl -pe 's/<\/b><BR \/>\s+//' | perl -pe 's/<br \/>\s+/\\r\\n/g')
 DAYS=$(echo $DAYS | perl -pe 'binmode STDOUT, ":utf8"; s/High: ('$sFPN') Low: ('$sFPN')/High: $1'$pDEG$UNITS' Low: $2'$pDEG$UNITS'/g')
+
+if (( $NOWIN == 0 ));
+then
+  HTMLTEMP=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Conditions for (.*) at(.*)Current Conditions:(.*?),\s*('$sFPN')\s*[C|F](.*)/<font color="green">Currently in $2:<\/font> <font color="red">$5'$pDEG' C,<\/font> <font color="brown">$4<\/font>/g' | perl -pe 's/<\/b><br \/>\s+//')
+
+  HTMLDAYS=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Forecast:(.*)(<br \/>).*/$2/' | perl -pe 's/<\/b><BR \/>\s+//' | perl -pe 's/<br \/>\s+/\\r\\n/g')
+  HTMLDAYS=$(echo $HTMLDAYS | perl -pe 'binmode STDOUT, ":utf8"; s/High: ('$sFPN') Low: ('$sFPN')/High: $1'$pDEG$UNITS' Low: $2'$pDEG$UNITS'/g')
+
+fi
 
 # Get weather image
 IMG=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)CDATA\[\s*<img src=\"(.*?)\"\/><br \/>.*/$2/')
@@ -114,8 +144,7 @@ IMG=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)CDATA\[\s*<img src=
 #curl -s -o /tmp/yahoo/current.gif $IMG
 
 SIZE=${#TEMP}
-# Somehow, using [[ $SIZE > 100 ]] does not work here
-if [ $SIZE -gt 100 ]
+if (( $SIZE > 100 ))
 then
 	echo "Unable to get temperature for location: $LOC"
   exit
@@ -124,8 +153,14 @@ fi
 echo -e $TEMP
 
 SIZE=${#DAYS}
-if [ $SIZE -lt 10 ]
+if (( $SIZE < 10 ))
 then	
+  exit
+fi
+
+if (( $NOWIN == 1 ));
+then
+  echo -e "\nForecast:\n$DAYS"
   exit
 fi
 
@@ -137,12 +172,19 @@ else
   # the html <img> tag doesn't seem to load local files
   # ./current.gif or file:///current.gif or /tmp/yahoo/current.gif
   # this seems to be for security reasons
-  echo -e "<img src=\"$IMG\" />" >| /tmp/yahoo/current.html
+  echo -e "" >| /tmp/yahoo/current.html
+  echo -e "<!DOCTYPE HTML>" >> /tmp/yahoo/current.html
+  echo -e "<html>" >> /tmp/yahoo/current.html
+  echo -e "<body>" >> /tmp/yahoo/current.html
+  echo -e "<img src=\"$IMG\" />" >> /tmp/yahoo/current.html 
 
-  HTMLDAYS=$(echo $DAYS | perl -pe 's/\\r/<\/p><p>/g')
-  echo -e "<p>$TEMP</p><p>Forecast:</p><p>$HTMLDAYS</p>" >> \
+  HTMLDAYS=$(echo $HTMLDAYS | perl -pe 's/\\r/<\/p><p>/g')
+  echo -e "<p>$HTMLTEMP</p><p>Forecast:</p><p>$HTMLDAYS</p>" >> \
   /tmp/yahoo/current.html
 
+  echo -e "</body>" >> /tmp/yahoo/current.html
+  echo -e "</html>" >> /tmp/yahoo/current.html
+  
   zenity --text-info --width 400 --height 400 2 --title "Weather info" \
   --html --filename="/tmp/yahoo/current.html" &> /dev/null
 
