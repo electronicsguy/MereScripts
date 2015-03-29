@@ -45,11 +45,11 @@ UNITS="C"
 # http://stackoverflow.com/questions/6534891/when-do-you-use-or-usr-bin-test
 
 # Define ANSI color sequences
-GREEN='\e[0;32m'
-YELLOW='\e[0;33m'
-WHITE='\e[0;37m'
-RED='\e[0;31m'
-BLUE='\e[0;34m'
+GREEN='\e[1;32m'
+YELLOW='\e[1;33m'
+WHITE='\e[1;37m'
+RED='\e[1;31m'
+BLUE='\e[1;34m'
 COLOROFF='\e[0m'
 
 
@@ -123,18 +123,27 @@ then
 fi
 
 # Note: If your ssh client does not support colors, remove all the color tags
+# Use non-greedy match (using .*?) to limit the match
 
 TEMP=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Conditions for (.*) at(.*)Current Conditions:(.*?),\s*('$sFPN')\s*[C|F](.*)/'$GREEN'Currently in $2: '$RED'$5'$pDEG' C, '$YELLOW'$4/g' | perl -pe 's/<\/b><br \/>\s+//')
 
+# remove breaks and other non-printable characters and terminate each line with CRLF
 DAYS=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Forecast:(.*)(<br \/>).*/'$COLOROFF'$2/' | perl -pe 's/<\/b><BR \/>\s+//' | perl -pe 's/<br \/>\s+/\\r\\n/g')
-DAYS=$(echo $DAYS | perl -pe 'binmode STDOUT, ":utf8"; s/High: ('$sFPN') Low: ('$sFPN')/High: $1'$pDEG$UNITS' Low: $2'$pDEG$UNITS'/g')
 
+# put the degree symbols and units and reverse the order of data
+DAYS=$(echo $DAYS | perl -pe 'binmode STDOUT, ":utf8"; s/(\w+?) - (.*?)\. High: ('$sFPN') Low: ('$sFPN')/$1 - High: $3'$pDEG$UNITS' Low: $4'$pDEG$UNITS', $2/g')
+
+# Use non-greedy match (using .*?) to limit the match
 if (( $NOWIN == 0 ));
 then
   HTMLTEMP=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Conditions for (.*) at(.*)Current Conditions:(.*?),\s*('$sFPN')\s*[C|F](.*)/<font color="green">Currently in $2:<\/font> <font color="red">$5'$pDEG' C,<\/font> <font color="brown">$4<\/font>/g' | perl -pe 's/<\/b><br \/>\s+//')
 
+# remove breaks and other non-printable characters and terminate each line with CRLF
   HTMLDAYS=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Forecast:(.*)(<br \/>).*/$2/' | perl -pe 's/<\/b><BR \/>\s+//' | perl -pe 's/<br \/>\s+/\\r\\n/g')
-  HTMLDAYS=$(echo $HTMLDAYS | perl -pe 'binmode STDOUT, ":utf8"; s/High: ('$sFPN') Low: ('$sFPN')/High: $1'$pDEG$UNITS' Low: $2'$pDEG$UNITS'/g')
+
+# put the degree symbols and units and reverse the order of data
+  HTMLDAYS=$(echo $HTMLDAYS | perl -pe 'binmode STDOUT, ":utf8"; s/(\w+?) - (.*?)\. High: ('$sFPN') Low: ('$sFPN')/$1 - High: $3'$pDEG$UNITS' Low: $4'$pDEG$UNITS', $2/g')
+  
 
 fi
 
