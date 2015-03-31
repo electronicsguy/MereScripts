@@ -23,7 +23,7 @@
 /home/*/.local/share/Trash/*
 
 # This script's log file
-/home/pi/Utils/backup/rsync.log
+/home/pi/Utils/Backup/rsync.log
 
 # Output data directories in /home
 /home/pi/Photography

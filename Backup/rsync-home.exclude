@@ -8,7 +8,7 @@
 /.local/share/Trash/*
 
 # This script's log file
-/Utils/backup/rsync.log
+/Utils/Backup/rsync.log
 
 # Output data directories in /home
 /Photography
