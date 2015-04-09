@@ -52,6 +52,28 @@ RED='\e[1;31m'
 BLUE='\e[1;34m'
 COLOROFF='\e[0m'
 
+# Yahoo API
+clientId=dj0yJmk9Zk1qN0ZqZmR3R2hNJmQ9WVdrOVFXWkVSRFZYTm0wbWNHbzlNQS0tJnM9Y29uc3VtZXJzZWNyZXQmeD03MQ--
+WHEREURL="http://where.yahooapis.com/v1/places.q"
+
+# Return values from bash functions ref:
+# http://www.linuxjournal.com/content/return-values-bash-functions
+getWOEID() {
+  WOEIDURL="$WHEREURL('$1')?appid=$clientId"
+  LOCDATA=$(curl -s $WOEIDURL)
+  local __LOC=''
+  __LOC=$(echo $LOCDATA | perl -pe 's/(.*?)<woeid>(\d+).*/$2/g')
+
+  # No location match or no data
+  local __LEN=SIZE=${#__LOC}
+  if (( ($__LEN > 20) || ($__LEN < 2) ));
+  then
+    eval "$2"="-1"
+  else
+    eval "$2"=$__LOC
+  fi
+}
+
 
 if [ -n "$1" ]
 then
@@ -86,7 +108,15 @@ then
     ;;
 
   *)
-    LOC="2295412"
+    LOC=''
+    # Replace spaces in the city name with "%20" and remove leading and trailing '%20's
+    ARG=$(echo $ARG | perl -pe 's/\s+/%20/g' | perl -pe 's/^(%20)//' | perl -pe 's/(%20)$//')
+    getWOEID $ARG LOC
+    if (( $LOC == -1 ))
+    then
+      echo -e "Unable to fetch weather data for location: $ARG"
+      exit
+    fi
     ;;
   esac
 
