@@ -11,7 +11,7 @@ The micro-SD card backup partition is mounted at:
  Backpi requires a working directory '.backpi' within the uesr pi's home directory.
  (Change this in the script for a different location)
  The config file (backpi.cfg) needs to be like this:
- ```
+ ```bash
 # Configuration file for backpi.sh
 
 DEFHOME="/home/pi/"
