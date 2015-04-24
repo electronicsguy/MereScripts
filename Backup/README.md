@@ -1,3 +1,5 @@
+#Backpi
+
 I wrote this script to simplify backing up the Raspberry Pi data. 
 My current setup is as follows:
 
@@ -25,9 +27,10 @@ LOGFILE="rsync.log"
 DEFEXCL="SETTINGS RECOVERY"
 ```
 All these definitions need to be in the file, even if not used (see below).
+
 Backpi can be used in a command-line only mode or in an interactive mode.
-For the former, all the above definitions should make sense.
-For the latter, only the exclude files, logfile and defexcl should make sense.
+- For the former, all the above definitions should make sense.
+- For the latter, only the exclude files, logfile and defexcl should make sense.
 
 For interactive mode, simply run Backpi without any command line arguments.
 For command-line only mode, run Backpi with 2 arguments:
@@ -36,13 +39,14 @@ For command-line only mode, run Backpi with 2 arguments:
 ```
 where <user> can be either 'home' or 'root' and
 <mode> can be 'dry-run' or 'actual'
-The default device and destination directories are picked up from the config file.
 
-All this can be set manually in the interactive mode.
-If Backpi runs with mode 'dry-run'. it gives a verbose output of everthing that would be done 
+The default device and destination directories are picked up from the config file.
+All this can be selected manually in the interactive mode.
+
+If Backpi runs in the 'dry-run' mode, it gives a verbose output of everthing that would be done 
 (copies, deletions) without actually making any changes. This is great for testing.
   
-Note: the backup location must be mounted and writable (by default at: /media/root).
+N_o_t_e: the backup location must be mounted and writable (by default at: /media/root).
 If not, Backpi tries to auto-mount it, or else exits with an error. 
 
 Backpi uses the standard Linux 'rsync' command, so only the required file modifications 
