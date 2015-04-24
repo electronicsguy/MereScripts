@@ -31,8 +31,9 @@ For the latter, only the exclude files, logfile and defexcl should make sense.
 
 For interactive mode, simply run Backpi without any command line arguments.
 For command-line only mode, run Backpi with 2 arguments:
+```
 ./backpi.sh  <user>  <mode>
-
+```
 where <user> can be either 'home' or 'root' and
 <mode> can be 'dry-run' or 'actual'
 The default device and destination directories are picked up from the config file.
@@ -50,8 +51,9 @@ and deletions will be propagated, based on modification times (a differential ba
 Even though I wrote Backpi for use with my Raspberry Pi, you could use it in any Linux system.
 Also, you could automate the backup by adding it as a 'cron' job.
 For example, to take a backup of the 'home' partition everyday at 9pm, put this in your root crontab:
+```
 0 21 * * * nice -n 15 /home/pi/backpi.sh home actual > /dev/null
-
+```
 All files distributed under that standard GPL V3 licence, unless stated otherwise.
 
 (C) Sujay Phadke
