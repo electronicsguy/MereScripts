@@ -7,7 +7,7 @@
 
 # need to use 'eval' to expand ~
 # ref: http://stackoverflow.com/questions/3963716/how-to-manually-expand-a-special-variable-ex-tilde-in-bash
-HOMEDIR=~
+HOMEDIR="/home/pi"
 eval homedir=$HOMEDIR
 CFG_PATH=$HOMEDIR"/.backpi/"
 CFG_FILE=$CFG_PATH"backpi.cfg"
