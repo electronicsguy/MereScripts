@@ -46,14 +46,14 @@ All this can be selected manually in the interactive mode.
 If Backpi runs in the 'dry-run' mode, it gives a verbose output of everthing that would be done 
 (copies, deletions) without actually making any changes. This is great for testing.
   
-N_o_t_e: the backup location must be mounted and writable (by default at: /media/root).
-If not, Backpi tries to auto-mount it, or else exits with an error. 
+**Note**: the backup location must be mounted and writable (by default at: /media/root).
+If not, Backpi tries to auto-mount it and if it cannot, exits with an error. 
 
-Backpi uses the standard Linux 'rsync' command, so only the required file modifications 
+Backpi uses the standard Linux '*rsync*' command, so only the required file modifications 
 and deletions will be propagated, based on modification times (a differential backup).
 
 Even though I wrote Backpi for use with my Raspberry Pi, you could use it in any Linux system.
-Also, you could automate the backup by adding it as a 'cron' job.
+Also, you could automate the backup by adding it as a '*cron*' job.
 For example, to take a backup of the 'home' partition everyday at 9pm, put this in your root crontab:
 ```
 0 21 * * * nice -n 15 /home/pi/backpi.sh home actual > /dev/null
