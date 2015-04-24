@@ -34,7 +34,7 @@ Backpi can be used in a command-line only mode or in an interactive mode.
 
 For interactive mode, simply run Backpi without any command line arguments.
 For command-line only mode, run Backpi with 2 arguments:
-```
+```bash
 ./backpi.sh  <user>  <mode>
 ```
 where <user> can be either 'home' or 'root' and
