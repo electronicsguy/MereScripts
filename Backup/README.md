@@ -37,8 +37,8 @@ For command-line only mode, run Backpi with 2 arguments:
 ```bash
 ./backpi.sh  <user>  <mode>
 ```
-where <user> can be either 'home' or 'root' and
-<mode> can be 'dry-run' or 'actual'
+where `<user>` can be either 'home' or 'root' and
+`<mode>` can be 'dry-run' or 'actual'
 
 The default device and destination directories are picked up from the config file.
 All this can be selected manually in the interactive mode.
