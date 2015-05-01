@@ -264,6 +264,28 @@ fi  # endif for if $CLI == 0
 
 #=========================================================
 
+# Safety net for backing-up only to the specific partition
+# meant for backup purposes. This makes sure another 
+# partition with the same /dev/xx address but different
+# label is not used for backup (like when you switch
+# SD cards). Only in case of fully auto mode when VALIDPART
+# has been specified in the config file
+
+if [[ $CLI == 1 ]];
+then
+  if ! [[ -z $VALIDPART ]];
+  then  
+    CURRPART=$(sudo blkid $DESTMOUNTDEV | perl -pe 's/.*LABEL="(.*?)".*/$1/')
+    
+    if [[ $CURRPART != $VALIDPART ]];
+    then
+      echo -e "ERROR: Partition $DESTMOUNTDEV should have the ";
+      echo -e "label '$VALIDPART' instead of '$CURRPART'. Aborting.\n"
+      exit 1
+    fi
+  fi
+fi
+
 # Check if destination mount directory exists
 if ! [[ -d $DESTMOUNTDIR ]];
 then
