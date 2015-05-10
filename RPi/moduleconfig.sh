@@ -8,7 +8,7 @@ CFGFILE="/boot/config.txt"
 # argument when passed as part of a array to a bash command. 
 # see this: http://stackoverflow.com/questions/30146241/error-with-linux-whiptail-dialog?noredirect=1#comment48401487_30146241
 moduleNames=('dtoverlay=w1-gpio' 'dtparam=spi' 'dtparam=i2c_arm' 'max_usb_current' 'start_x' 'hdmi_force_hotplug' 'hdmi_safe' 'disable_overscan')
-moduleDesc=('1-wire interface' 'SPI Interface' 'I2C Interface' 'Increase Max USB current to 1.2Amp' 'Camera' 'Force HMDI output instead of composite' 'Override HMDI safe mode' 'Disable display overscan')
+moduleDesc=('1-wire interface' 'SPI Interface' 'I2C Interface' 'Increase Max USB current to 1.2Amp' 'Camera' 'Force HDMI output instead of composite' 'Override HDMI safe mode' 'Disable display overscan')
 numModules=${#moduleNames[@]}
 choices=("OFF" "ON")
 
@@ -74,7 +74,7 @@ else
             --title "Config Modules State" \
             --checklist --separate-output \
             --ok-button "Done" \
-            "Choose modules to activate" \
+            "Select modules to enable" \
             20 50 $foundModules \
             "${CHECKLIST[@]}" \
             3>&1 1>&2 2>&3)
