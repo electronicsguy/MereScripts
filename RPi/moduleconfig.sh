@@ -12,11 +12,13 @@ moduleDesc=('1-wire interface' 'SPI Interface' 'I2C Interface' 'Increase Max USB
 numModules=${#moduleNames[@]}
 choices=("OFF" "ON")
 
+NOSUDO=0
 # Check root permissions
 if [[ $(id -u) -ne 0 ]]; 
 then 
-  echo -e "Please run with superuser (root) privileges."
-  exit 1
+  echo -e "Please run with superuser (root) privileges." 
+  echo -e "Will continue in read-only mode..."
+  NOSUDO=1
 fi
 
 if ! [[ -f $CFGFILE ]];
@@ -68,17 +70,43 @@ else
     fi
   done
   
+  
+  boxHeight=15
+  boxWidth=50
+  if [[ $foundModules > 9 ]];
+  then
+    listHeight=9
+  else
+    listHeight=$foundModules
+  fi
   # The quotes around CHECKLIST are required. stupid bash again!
   # If whiptail is replaced with dialog, remove ok-button which is incompatible
-  RESULT=$(whiptail \
-            --title "Config Modules State" \
-            --checklist --separate-output \
-            --ok-button "Done" \
-            "Select modules to enable" \
-            20 50 $foundModules \
-            "${CHECKLIST[@]}" \
-            3>&1 1>&2 2>&3)
+  if [[ $NOSUDO == 0 ]];
+  then
+      RESULT=$(whiptail \
+              --title "Config Modules State" \
+              --checklist --separate-output \
+              --ok-button "Done" \
+              "Select modules to enable" \
+              $boxHeight $boxWidth $listHeight \
+              "${CHECKLIST[@]}" \
+              3>&1 1>&2 2>&3)
+  else
+      RESULT=$(whiptail \
+              --title "Config Modules State" \
+              --checklist --separate-output \
+              --ok-button "Exit" --nocancel\
+              "Read-only Mode" \
+              $boxHeight $boxWidth $listHeight \
+              "${CHECKLIST[@]}" \
+              3>&1 1>&2 2>&3)
+  
+  fi
+fi
 
+if [[ $NOSUDO == 1 ]];
+then
+  exit 0
 fi
 
 # Check if cancel pressed
