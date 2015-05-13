@@ -94,6 +94,7 @@ else
   else
       RESULT=$(whiptail \
               --title "Config Modules State" \
+              --backtitle "In Read-only mode!!" \
               --checklist --separate-output \
               --ok-button "Exit" --nocancel\
               "Read-only Mode" \
@@ -104,13 +105,17 @@ else
   fi
 fi
 
+# Save 'CANCEL' value so its not over-written
+# by the test statement below
+CANCEL=$?
+
 if [[ $NOSUDO == 1 ]];
 then
   exit 0
 fi
 
 # Check if cancel pressed
-if [[ $? != 0 ]];
+if [[ $CANCEL != 0 ]];
 then
   exit 1
 fi
@@ -118,6 +123,7 @@ fi
 newModuleStatus=()
 # note: even if a module is not present, this array will contain a '0' for it.
 # this is checked later on by iterating over the original moduleStatus array
+# Init with 0s
 for ((i=0;i<$numModules; i++))
 do
   newModuleStatus[$i]='0'
@@ -154,7 +160,7 @@ do
   then
     continue
   fi
-  
+
   # Implement changes
   case $new in
   "0")
