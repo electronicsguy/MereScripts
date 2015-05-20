@@ -74,74 +74,90 @@ getWOEID() {
   fi
 }
 
+# Supress zenity window by default
+ZENITYWIN=0
+NOWHIPTAIL=0
+NUMARGS=$#
 
-if [ -n "$1" ]
+# Check options
+if (( $NUMARGS  == 0 ));
 then
-  ARG=$1
-  ARG=${ARG,,}    # convert all to lowercase
-  
-  #echo "Find weather for: $ARG"
-  
-  case $ARG in
-  "mumbai"|"bombay")
-    LOC="2295411"
-    ;;
-  
-  48109|48105|48104|"Ann Arbor")
-    LOC="2354842"
-    ;;
-    
-  "pune")
-    LOC="2295412"
-    ;;
-    
-  "delhi"|"new delhi"|"newdelhi")
-    LOC="29229014"
-    ;;
-
-  "bangalore"|"bengaluru")
-    LOC="2295420"
-    ;;
-
-  "calcutta"|"kolkata")
-    LOC="2295386"
-    ;;
-
-  *)
-    LOC=''
-    # Replace spaces in the city name with "%20" and remove leading and trailing '%20's
-    ARG=$(echo $ARG | perl -pe 's/\s+/%20/g' | perl -pe 's/^(%20)//' | perl -pe 's/(%20)$//')
-    getWOEID $ARG LOC
-    if (( $LOC == -1 ))
-    then
-      echo -e "Unable to fetch weather data for location: $ARG"
-      exit
-    fi
-    ;;
-  esac
-
+  echo -e "Usage: program-name <location> <options: html or nw>"
+  exit 1
 else
+  if (( $NUMARGS == 2 ));
+  then
+    OPT=$2
+    OPT=${OPT,,}  # convert to lowercase
+    case $OPT in
+    "nw")
+      # Suppress whiptail dialog
+      NOWHIPTAIL=1
+      ;;
+    "html")
+    # Make sure that the display is capable of zenity
+      if ! [[ -z $DISPLAY ]];
+      then
+        ZENITYWIN=1
+      fi
+      ;;
+    *)
+      echo -e "Invalid option: $OPT"
+      exit 1
+      ;;
+    esac
+  fi
+fi
+
+# Location must be in the 1st arguments
+NAME=$1
+NAME=${NAME,,}    # convert to lowercase
+
+case $NAME in
+"mumbai"|"bombay")
+  LOC="2295411"
+  ;;
+
+"48109"|"48105"|"48104"|"Ann Arbor")
+  LOC="2354842"
+  ;;
+
+"pune")
   LOC="2295412"
-fi
+  ;;
 
-# Supress zenity window
-NOWIN=0
-if [[ ($1 == "nw") || ($1 == "-nw") ]];
-then
-  NOWIN=1
-fi
+"delhi"|"new delhi"|"newdelhi")
+  LOC="29229014"
+  ;;
 
-if [[ ($# > 1) && (($2 == "nw") || ($2 == "-nw")) ]];
-then
-  NOWIN=1
-fi
+"bangalore"|"bengaluru")
+  LOC="2295420"
+  ;;
+
+"calcutta"|"kolkata")
+  LOC="2295386"
+  ;;
+
+*)
+  LOC=''
+  # Replace spaces in the city name with "%20" and remove leading and trailing '%20's
+  NAME=$(echo $NAME | perl -pe 's/\s+/%20/g' | perl -pe 's/^(%20)//' | perl -pe 's/(%20)$//')
+
+  getWOEID $NAME LOC
+
+  if (( $LOC == -1 ));
+  then
+    echo -e "Unable to fetch weather data for location: $NAME"
+  exit 1
+  fi
+  ;;
+
+esac
 
 # For some reason the API must be given units in lowercase letters!
 URL="http://weather.yahooapis.com/forecastrss?w=$LOC&u=${UNITS,,}"
 
-rm -rf /tmp/yahoo
-mkdir /tmp/yahoo
-
+# Fetch weather data
 WDATA=$(curl -s $URL)
 
 SIZE=${#WDATA}
@@ -155,7 +171,8 @@ fi
 # Note: If your ssh client does not support colors, remove all the color tags
 # Use non-greedy match (using .*?) to limit the match
 
-TEMP=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Conditions for (.*) at(.*)Current Conditions:(.*?),\s*('$sFPN')\s*[C|F](.*)/'$GREEN'Currently in $2: '$RED'$5'$pDEG' C, '$YELLOW'$4/g' | perl -pe 's/<\/b><br \/>\s+//')
+
+TEMP=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Conditions for (.*) at(.*)Current Conditions:(.*?),\s*('$sFPN')\s*[C|F](.*)/'$GREEN'Currently in $2: '$RED'$5'$pDEG'C, '$YELLOW'$4/g' | perl -pe 's/<\/b><br \/>\s+//')
 
 # remove breaks and other non-printable characters and terminate each line with CRLF
 DAYS=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Forecast:(.*)(<br \/>).*/'$COLOROFF'$2/' | perl -pe 's/<\/b><BR \/>\s+//' | perl -pe 's/<br \/>\s+/\\r\\n/g')
@@ -164,58 +181,69 @@ DAYS=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Forecast:(.*)(<br 
 DAYS=$(echo $DAYS | perl -pe 'binmode STDOUT, ":utf8"; s/(\w+?) - (.*?)\. High: ('$sFPN') Low: ('$sFPN')/$1 - High: $3'$pDEG$UNITS' Low: $4'$pDEG$UNITS', $2/g')
 
 # Use non-greedy match (using .*?) to limit the match
-if (( $NOWIN == 0 ));
+
+if (( $ZENITYWIN == 1 ));
 then
-  HTMLTEMP=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Conditions for (.*) at(.*)Current Conditions:(.*?),\s*('$sFPN')\s*[C|F](.*)/<font color="green">Currently in $2:<\/font> <font color="red">$5'$pDEG' C,<\/font> <font color="brown">$4<\/font>/g' | perl -pe 's/<\/b><br \/>\s+//')
+  HTMLTEMP=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Conditions for (.*) at(.*)Current Conditions:(.*?),\s*('$sFPN')\s*[C|F](.*)/<font color="green">Currently in $2:<\/font> <font color="red">$5'$pDEG'C,<\/font> <font color="brown">$4<\/font>/g' | perl -pe 's/<\/b><br \/>\s+//')
 
 # remove breaks and other non-printable characters and terminate each line with CRLF
   HTMLDAYS=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Forecast:(.*)(<br \/>).*/$2/' | perl -pe 's/<\/b><BR \/>\s+//' | perl -pe 's/<br \/>\s+/\\r\\n/g')
 
 # put the degree symbols and units and reverse the order of data
   HTMLDAYS=$(echo $HTMLDAYS | perl -pe 'binmode STDOUT, ":utf8"; s/(\w+?) - (.*?)\. High: ('$sFPN') Low: ('$sFPN')/$1 - High: $3'$pDEG$UNITS' Low: $4'$pDEG$UNITS', $2/g')
-  
+
+  rm -rf /tmp/yahoo
+  mkdir /tmp/yahoo
+# Get weather image
+  WEATHERIMG=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)CDATA\[\s*<img src=\"(.*?)\"\/><br \/>.*/$2/')
+# Image download disabled since we can't use it anyways (see <img> note below)
+  #curl -s -o /tmp/yahoo/current.gif $WEATHERIMG
 
 fi
 
-# Get weather image
-IMG=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)CDATA\[\s*<img src=\"(.*?)\"\/><br \/>.*/$2/')
-# image download disabled since we can't use it anyways (see <img> note below)
-#curl -s -o /tmp/yahoo/current.gif $IMG
-
 SIZE=${#TEMP}
-if (( $SIZE > 100 ))
+if (( $SIZE > 100 ));
 then
-	echo "Unable to get temperature for location: $LOC"
-  exit
+  echo "Unable to get temperature for location: $LOC"
+  exit 1
 fi
 
 echo -e $TEMP
 
 SIZE=${#DAYS}
-if (( $SIZE < 10 ))
-then	
-  exit
+if (( $SIZE < 10 ));
+then
+  exit 1
 fi
 
-if (( $NOWIN == 1 ));
+if (( $ZENITYWIN == 0 ));
 then
   echo -e "\nForecast:\n$DAYS"
-  exit
-fi
 
-if [[ -z $DISPLAY ]];
-then
-  echo -e "\nForecast:\n$DAYS"
-  exit
+  if (( $NOWHIPTAIL == 0 ));
+  then
+    # Remove color formatting characters for whiptail
+    TEMP2=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Conditions for (.*) at(.*)Current Conditions:(.*?),\s*('$sFPN')\s*[C|F](.*)/Currently in $2: $5'$pDEG'C, $4/g' | perl -pe 's/<\/b><br \/>\s+//')
+    # remove breaks and other non-printable characters and terminate each line with CR (somehow whiptail doesn't recognize CRLF)
+    DAYS2=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Forecast:(.*)(<br \/>).*/$2/' | perl -pe 's/<\/b><BR \/>\s+//' | perl -pe 's/<br \/>\s+/\\n/g')
+
+    # put the degree symbols and units and reverse the order of data
+    DAYS2=$(echo $DAYS2 | perl -pe 'binmode STDOUT, ":utf8"; s/(\w+?) - (.*?)\. High: ('$sFPN') Low: ('$sFPN')/$1 - High: $3'$pDEG$UNITS' Low: $4'$pDEG$UNITS', $2/g')
+
+    WHIPTAILMSG="$TEMP2\n\n\n$DAYS2"
+    whiptail --title "Weather Info" --msgbox "$WHIPTAILMSG"  17 60 3>&1 1>&2 2>&3
+  fi
+
 else
-  # the html <img> tag doesn't seem to load local files
+
+  # The html tag <img> doesn't seem to load local files
   # ./current.gif or file:///current.gif or /tmp/yahoo/current.gif
-  # this seems to be for security reasons
+  # This seems to be for security reasons
   echo -e "" >| /tmp/yahoo/current.html
   echo -e "<!DOCTYPE HTML>" >> /tmp/yahoo/current.html
   echo -e "<html>" >> /tmp/yahoo/current.html
   echo -e "<body>" >> /tmp/yahoo/current.html
-  echo -e "<img src=\"$IMG\" />" >> /tmp/yahoo/current.html 
+  echo -e "<img src=\"$WEATHERIMG\" />" >> /tmp/yahoo/current.html
 
   HTMLDAYS=$(echo $HTMLDAYS | perl -pe 's/\\r/<\/p><p>/g')
   echo -e "<p>$HTMLTEMP</p><p>Forecast:</p><p>$HTMLDAYS</p>" >> \
@@ -223,9 +251,10 @@ else
 
   echo -e "</body>" >> /tmp/yahoo/current.html
   echo -e "</html>" >> /tmp/yahoo/current.html
-  
+
   zenity --text-info --width 400 --height 400 2 --title "Weather info" \
   --html --filename="/tmp/yahoo/current.html" &> /dev/null
 
 fi
 
+exit 0
