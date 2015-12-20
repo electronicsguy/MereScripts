@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+
+<!-- // (C) Sujay Phadke 2015 -->
+
+<div class="container">
+  <table id="table1">
+          <tr align="left">
+            <td>
+              <button type="button" onclick="TriggerAjax(1)">Get Data</button>
+            </td>
+            <td>
+              <button type="button" onclick="TriggerAjax(2)">Clear Cache</button>
+            </td>
+            <td>
+              <button type="button" onclick="ResetBox()">Reset data box</button>
+            </td>
+          </tr>
+             
+  </table>
+</div>
+
+<div>
+&nbsp;
+&nbsp;
+</div>
+
+<div class="container" style="text-align:left" id="retval">
+  Return data will be displayed here
+</div>
+
+<script>
+// Grab this key by publishing the server-side as a web-app and copy the 
+// URL from there. Note: the URL must be the main one displayed
+// in the 'publish' window (starts with script.google.com)
+// when we click on it, it redirects to another one lcoated at:
+// script.googleusercontent.com, which is for security purposes.
+  
+var scriptID = "<put your script Id here>";
+var appURL = "https://script.google.com/macros/s/" + scriptID + "/exec";
+var appURLJS = appURL + "?JSONP=1&prefix=alert";
+var appURLCLR = appURL + "?CLEAR=1&prefix=alert";
+</script>
+
+<script>
+// ref:
+// http://stackoverflow.com/questions/11481222/how-do-i-make-xhr-ajax-requests-against-google-apps-script-contentservice-work
+// http://stackoverflow.com/questions/11150409/use-js-variable-to-set-the-src-attribute-for-script-tag
+
+document.write("<script type='text/javascript' src='"+ appURLJS + "'><\/scr" + "ipt>");
+
+function TriggerAjax(command) {
+  var ReqStr = '';
+  
+  if (command == 1){
+    console.log('Getting data...');
+    ReqStr = appURL;
+  }
+  else if (command == 2){
+    console.log('Clearing Cache...');
+    ReqStr = appURLCLR;
+  }
+  else {
+    alert('Incorrect Option!');
+    return;
+  }
+  
+  var Req = new XMLHttpRequest();
+ 
+  Req.onreadystatechange=function() {
+  // Safari bug doesn't make XMLHttpRequest work correctly.
+  // https://github.com/angular/angular.js/issues/8672
+    if ((Req.readyState == 4) && (Req.status == 0)) {
+      document.getElementById('retval').innerHTML = '';
+      alert("Error! No data received.\nThis may happen if you're using Safari.\nPlease Switch to a different browser.\n \
+      \nIt could also be a problem with the client and server app permissions (need to allow anonymous access).");
+    }
+  // request finished and "OK" status
+    if ((Req.readyState == 4) && (Req.status == 200)) {
+
+    // http://stackoverflow.com/questions/8573890/using-new-line-n-in-string-and-rendering-the-same-in-html
+    // http://stackoverflow.com/questions/16598477/remove-double-quotes-from-json-return-data-using-jquery
+      var htmlToInject = Req.responseText;
+      var htmlToInject = htmlToInject.replace(/\\n/g, '<br />');
+      var htmlToInject = htmlToInject.replace(/\"/g, "");
+
+      document.getElementById('retval').innerHTML = htmlToInject;
+      
+      //(eval(htmlToInject));
+      //myCallback(Req.responseText);
+      if (command == 1){
+        console.log('Data obtained.');
+      }
+      else{
+        console.log('Cache cleared.');
+      }
+      
+      return;
+    }
+  }
+
+  // AJAX request
+  Req.open("GET", ReqStr, true);
+  Req.send();
+   
+}
+
+function myCallback(data){
+    alert('It Works!\n' + data );
+}
+
+function ResetBox(){
+  document.getElementById('retval').innerHTML = 'Return data will be displayed here';
+  console.log('Data box cleared.');
+}
+
+</script>
