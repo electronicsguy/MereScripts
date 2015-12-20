@@ -56,7 +56,7 @@ function readFile() {
     hFile = DriveApp.createFile(fileName, "");
     // Works for content upto 10MB
     var str = "My Log File" + "\n" + "First log entry";
-    hfile.setContent(str);  
+    hFile.setContent(str);  
   }
   
   Logger.log("File id: " + hFile.getId());
