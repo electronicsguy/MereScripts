@@ -35,10 +35,15 @@
 // when we click on it, it redirects to another one lcoated at:
 // script.googleusercontent.com, which is for security purposes.
   
-var scriptID = "<put your script Id here>";
+var scriptID = "AKfycbz0YQ55nAwiTfY2h_GQ2SM0Px6qI21CH5nMACERJttbCfMEn7A";
 var appURL = "https://script.google.com/macros/s/" + scriptID + "/exec";
 var appURLJS = appURL + "?JSONP=1&prefix=alert";
 var appURLCLR = appURL + "?CLEAR=1&prefix=alert";
+var appURLJSSAFARI = appURL + "?JSONP=1&prefix=myCallback";
+var appURLCLRSAFARI = appURL + "?JSONP=1&CLEAR=1&prefix=myCallback";
+
+var redirectBlock = false;
+
 </script>
 
 <script>
@@ -51,42 +56,53 @@ document.write("<script type='text/javascript' src='"+ appURLJS + "'><\/scr" + "
 function TriggerAjax(command) {
   var ReqStr = '';
   
-  if (command == 1){
-    console.log('Getting data...');
-    ReqStr = appURL;
+  switch (command){
+    case 1:
+      console.log('Getting data...');
+      ReqStr = appURL;
+      break;
+    case 2:
+      console.log('Clearing Cache...');
+      ReqStr = appURLCLR;
+      break;
+    default:
+      alert('Incorrect Option!');
+      return;
   }
-  else if (command == 2){
-    console.log('Clearing Cache...');
-    ReqStr = appURLCLR;
-  }
-  else {
-    alert('Incorrect Option!');
+  
+  // if Safari has been detected earlier, bypass XMLHttpRequest since it'll fail
+  // in any case.
+  if (redirectBlock){
+    console.log('Bypassing XMLHttpRequest.');
+    DynamicScript(command);
     return;
   }
   
   var Req = new XMLHttpRequest();
  
   Req.onreadystatechange=function() {
-  // Safari bug doesn't make XMLHttpRequest work correctly.
-  // https://github.com/angular/angular.js/issues/8672
+    console.log('Req: state = ' + Req.readyState + '\nstatus = ' + Req.status);
+    
+    // Safari bug doesn't make XMLHttpRequest work correctly.
+    // https://github.com/angular/angular.js/issues/8672
     if ((Req.readyState == 4) && (Req.status == 0)) {
+      redirectBlock = true;
       document.getElementById('retval').innerHTML = '';
-      alert("Error! No data received.\nThis may happen if you're using Safari.\nPlease Switch to a different browser.\n \
-      \nIt could also be a problem with the client and server app permissions (need to allow anonymous access).");
+      //alert("Error! No data received.\nThis may happen if you're using Safari.\nPlease Switch to a different browser.\n \
+      //\nIt could also be a problem with the client and server app permissions (need to allow anonymous access).");
+      DynamicScript(command);
     }
-  // request finished and "OK" status
+    
+    // request finished and "OK" status
     if ((Req.readyState == 4) && (Req.status == 200)) {
 
     // http://stackoverflow.com/questions/8573890/using-new-line-n-in-string-and-rendering-the-same-in-html
     // http://stackoverflow.com/questions/16598477/remove-double-quotes-from-json-return-data-using-jquery
-      var htmlToInject = Req.responseText;
-      var htmlToInject = htmlToInject.replace(/\\n/g, '<br />');
-      var htmlToInject = htmlToInject.replace(/\"/g, "");
+      var htmlToInject = FormatHtmlData(Req.responseText);
+      
 
       document.getElementById('retval').innerHTML = htmlToInject;
-      
-      //(eval(htmlToInject));
-      //myCallback(Req.responseText);
+     
       if (command == 1){
         console.log('Data obtained.');
       }
@@ -101,11 +117,53 @@ function TriggerAjax(command) {
   // AJAX request
   Req.open("GET", ReqStr, true);
   Req.send();
-   
+
+}
+
+function FormatHtmlData(data){
+  var retval = data;
+  retval = retval.replace(/\\n/g, '<br />');
+  retval = retval.replace(/\"/g, "");
+  return retval;
+}
+
+function DynamicScript(command){
+  
+  var str = '';
+  
+  switch (command) {
+    case 1:
+      str = appURLJSSAFARI;
+      break;
+    case 2:
+      str = appURLCLRSAFARI;
+      break;
+    default:
+  }
+  
+  console.log('JS command = ' + command + '  ' + str);
+  
+  // create and run temporary script element
+  var head = document.getElementsByTagName('head').item(0);
+  var x = document.createElement("script");
+  x.setAttribute('type', 'text/javascript');
+  x.setAttribute('src', str);
+  x.setAttribute('async', 'true');
+  x.setAttribute('id', 'dynScript');
+  head.appendChild(x);
+  
 }
 
 function myCallback(data){
-    alert('It Works!\n' + data );
+    console.log('callback data = ' + data);
+    
+    var htmlToInject = FormatHtmlData(JSON.stringify(data));
+    document.getElementById('retval').innerHTML = htmlToInject;
+    
+    // remove temporary script element
+    var x = document.getElementById('dynScript');
+    x.parentNode.removeChild(x);
+    console.log('Removed script element.');
 }
 
 function ResetBox(){
