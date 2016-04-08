@@ -77,12 +77,13 @@ getWOEID() {
 # Supress zenity window by default
 ZENITYWIN=0
 NOWHIPTAIL=0
+TESTMODE=0
 NUMARGS=$#
 
 # Check options
 if (( $NUMARGS  == 0 ));
 then
-  echo -e "Usage: program-name <location> <options: html or nw>"
+  echo -e "Usage: program-name <location name/WOEID> <options: html or nw or test>"
   exit 1
 else
   if (( $NUMARGS == 2 ));
@@ -100,6 +101,11 @@ else
       then
         ZENITYWIN=1
       fi
+      ;;
+    "test")
+    # Format output for use in sensor/plotting
+      NOWHIPTAIL=1
+      TESTMODE=1
       ;;
     *)
       echo -e "Invalid option: $OPT"
@@ -143,7 +149,13 @@ case $NAME in
   # Replace spaces in the city name with "%20" and remove leading and trailing '%20's
   NAME=$(echo $NAME | perl -pe 's/\s+/%20/g' | perl -pe 's/^(%20)//' | perl -pe 's/(%20)$//')
 
-  getWOEID $NAME LOC
+  re='^[0-9]+$'
+  if [[ $NAME =~ $re ]];
+  then
+    LOC=$NAME
+  else
+    getWOEID $NAME LOC
+  fi
 
   if (( $LOC == -1 ));
   then
@@ -155,10 +167,21 @@ case $NAME in
 esac
 
 # For some reason the API must be given units in lowercase letters!
-URL="http://weather.yahooapis.com/forecastrss?w=$LOC&u=${UNITS,,}"
+# Yahoo API changes: https://forum.rainmeter.net/viewtopic.php?f=14&t=23003&start=10
+#URL="http://weather.yahooapis.com/forecastrss?w=$LOC&u=${UNITS,,}"
+URL="http://xml.weather.yahoo.com/forecastrss?w=$LOC&u=${UNITS,,}"
 
 # Fetch weather data
 WDATA=$(curl -s $URL)
+
+# Check for Yahoo API authentication error
+YERROR=$(echo $WDATA | grep -ion "yahoo:error" | wc -l)
+if (( YERROR > 0 ));
+then
+  echo $WDATA > newweather.log
+  echo -e "Yahoo API authentication error! Please check log file: newweather.log";
+  exit 1; 
+fi
 
 SIZE=${#WDATA}
 
@@ -171,6 +194,9 @@ fi
 # Note: If your ssh client does not support colors, remove all the color tags
 # Use non-greedy match (using .*?) to limit the match
 
+WTIME=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*) (\d+) (\w+) (\d+) (.*?)<\/pub(.*)/$2 $3 $4 $5/')
+
+HUMIDITY=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)humidity="(\d+)"(.*)/$2/')
 
 TEMP=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Conditions for (.*) at(.*)Current Conditions:(.*?),\s*('$sFPN')\s*[C|F](.*)/'$GREEN'Currently in $2: '$RED'$5'$pDEG'C, '$YELLOW'$4/g' | perl -pe 's/<\/b><br \/>\s+//')
 
@@ -201,6 +227,7 @@ then
 
 fi
 
+
 SIZE=${#TEMP}
 if (( $SIZE > 100 ));
 then
@@ -208,7 +235,14 @@ then
   exit 1
 fi
 
-echo -e $TEMP
+if (( $TESTMODE == 0 ));
+then
+  echo -e $TEMP
+else
+  echo -e $(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Conditions for (.*) at(.*)Current Conditions:(.*?),\s*('$sFPN')\s*[C|F](.*)/Temperature = $5/g' | perl -pe 's/<\/b><br \/>\s+//')
+  echo -e "humidity = $HUMIDITY"
+  echo -e "WTIME=$WTIME"
+fi
 
 SIZE=${#DAYS}
 if (( $SIZE < 10 ));
@@ -223,14 +257,15 @@ then
   if (( $NOWHIPTAIL == 0 ));
   then
     # Remove color formatting characters for whiptail
-    TEMP2=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Conditions for (.*) at(.*)Current Conditions:(.*?),\s*('$sFPN')\s*[C|F](.*)/Currently in $2: $5'$pDEG'C, $4/g' | perl -pe 's/<\/b><br \/>\s+//')
+    TEMP2=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Conditions for (.*) at(.*)Current Conditions:(.*?),\s*('$sFPN')\s*[C|F](.*)/Currently in $2: $5 deg C, $4/g' | perl -pe 's/<\/b><br \/>\s+//')
     # remove breaks and other non-printable characters and terminate each line with CR (somehow whiptail doesn't recognize CRLF)
     DAYS2=$(echo $WDATA | perl -pe 'binmode STDOUT, ":utf8"; s/(.*)Forecast:(.*)(<br \/>).*/$2/' | perl -pe 's/<\/b><BR \/>\s+//' | perl -pe 's/<br \/>\s+/\\n/g')
 
     # put the degree symbols and units and reverse the order of data
-    DAYS2=$(echo $DAYS2 | perl -pe 'binmode STDOUT, ":utf8"; s/(\w+?) - (.*?)\. High: ('$sFPN') Low: ('$sFPN')/$1 - High: $3'$pDEG$UNITS' Low: $4'$pDEG$UNITS', $2/g')
+    DAYS2=$(echo $DAYS2 | perl -pe 'binmode STDOUT, ":utf8"; s/(\w+?) - (.*?)\. High: ('$sFPN') Low: ('$sFPN')/$1 - High: $3 deg '$UNITS' Low: $4 deg '$UNITS', $2/g')
 
     WHIPTAILMSG="$TEMP2\n\n\n$DAYS2"
+    
     whiptail --title "Weather Info" --msgbox "$WHIPTAILMSG"  17 60 3>&1 1>&2 2>&3
   fi
 
