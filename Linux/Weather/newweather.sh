@@ -174,13 +174,22 @@ URL="http://xml.weather.yahoo.com/forecastrss?w=$LOC&u=${UNITS,,}"
 # Fetch weather data
 WDATA=$(curl -s $URL)
 
+# Check connectionn error
+CERROR=$(echo $WDATA | grep -ion "could not connect" | wc -l)
+if (( CERROR > 0 ));
+then
+  echo $WDATA > newweather.log
+  echo -e "Connection error! Please check log file: newweather.log";
+  exit 1;
+fi
+
 # Check for Yahoo API authentication error
 YERROR=$(echo $WDATA | grep -ion "yahoo:error" | wc -l)
 if (( YERROR > 0 ));
 then
   echo $WDATA > newweather.log
   echo -e "Yahoo API authentication error! Please check log file: newweather.log";
-  exit 1; 
+  exit 1;
 fi
 
 SIZE=${#WDATA}
@@ -265,7 +274,7 @@ then
     DAYS2=$(echo $DAYS2 | perl -pe 'binmode STDOUT, ":utf8"; s/(\w+?) - (.*?)\. High: ('$sFPN') Low: ('$sFPN')/$1 - High: $3 deg '$UNITS' Low: $4 deg '$UNITS', $2/g')
 
     WHIPTAILMSG="$TEMP2\n\n\n$DAYS2"
-    
+
     whiptail --title "Weather Info" --msgbox "$WHIPTAILMSG"  17 60 3>&1 1>&2 2>&3
   fi
 
