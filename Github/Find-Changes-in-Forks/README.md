@@ -15,6 +15,6 @@ The format of config.txt file is:
 ```
 All you need to do us run:
 ```
-./find-changes.sh
+./fetch-changes.sh
 ```
 The output will be list of **fork:branch:commit** for the specific repo file sorted by date of commit.
