@@ -18,3 +18,5 @@ All you need to do us run:
 ./fetch-changes.sh
 ```
 The output will be list of **fork:branch:commit** for the specific repo file sorted by date of commit.
+
+NB: You need **git** installed for this to work.
